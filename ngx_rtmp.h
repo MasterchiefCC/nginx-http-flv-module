@@ -213,6 +213,9 @@ typedef struct {
 enum { NGX_RTMP_PROTOCOL_RTMP = 0, NGX_RTMP_PROTOCOL_HTTP };
 
 #define NGX_RTMP_INTERNAL_SERVER_ERROR 500
+#define NGX_RTMP_MD5_LEN 16
+#define NGX_RTMP_MD5_STR_LEN 33
+#define NGX_RTMP_MAX_HEX_TIME_LEN 17
 
 typedef struct {
   uint32_t csid;      /* chunk stream id */
@@ -765,4 +768,6 @@ void ngx_inet_set_port(struct sockaddr *sa, in_port_t port);
 ngx_int_t ngx_rtmp_send_fcpublish(ngx_rtmp_session_t *s, u_char *desc);
 ngx_int_t ngx_rtmp_send_fcunpublish(ngx_rtmp_session_t *s, u_char *desc);
 ngx_int_t ngx_rtmp_peer_connect_from_addrs(ngx_rtmp_session_t *s);
+ngx_int_t ngx_rtmp_is_match_len(const char *src, ngx_uint_t src_len,
+                                const char *dest, ngx_uint_t dest_len);
 #endif /* _NGX_RTMP_H_INCLUDED_ */
