@@ -202,7 +202,7 @@ static char *ngx_rtmp_notify_merge_app_conf(ngx_conf_t *cf, void *parent,
                             NGX_RTMP_NETCALL_HTTP_POST);
   ngx_conf_merge_msec_value(conf->update_timeout, prev->update_timeout, 30000);
   ngx_conf_merge_msec_value(conf->reconnect_timegap, prev->reconnect_timegap,
-                            10000);  // 10s
+                            3000);  // 3s
   ngx_conf_merge_msec_value(conf->reconnect_timeout, prev->reconnect_timeout,
                             300000);  // 5m
   ngx_conf_merge_value(conf->update_strict, prev->update_strict, 0);
