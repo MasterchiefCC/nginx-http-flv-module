@@ -51,7 +51,7 @@ typedef struct {
   unsigned video_key_sent : 1;
   unsigned audio : 1;
   unsigned video : 1;
-    ////////////////////////////////////
+  ////////////////////////////////////
   ngx_array_t *actionArray;
   ngx_uint_t isFirstLoadAction;
 } ngx_rtmp_record_rec_ctx_t;

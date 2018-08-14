@@ -42,7 +42,6 @@
 #pragma GCC visibility pop
 #endif
 
-
 ngx_rtmp_record_done_pt ngx_rtmp_record_done;
 
 static ngx_rtmp_publish_pt next_publish;
@@ -1861,8 +1860,8 @@ static ngx_int_t ngx_rtmp_record_postconfiguration(ngx_conf_t *cf) {
 }
 /////////////////////////////////////////cjson/////////////////////////////////////////
 
-#define true ((cJSON_bool)1)
-#define false ((cJSON_bool)0)
+#define true((cJSON_bool)1)
+#define false((cJSON_bool)0)
 
 typedef struct {
   const unsigned char *json;

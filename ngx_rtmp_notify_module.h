@@ -38,7 +38,7 @@ enum {
 };
 
 typedef struct {
-  ngx_url_t *url[NGX_RTMP_NOTIFY_APP_MAX];
+  ngx_url_t* url[NGX_RTMP_NOTIFY_APP_MAX];
   ngx_flag_t active;
   ngx_uint_t method, loop_times;
   ngx_msec_t update_timeout, reconnect_timegap, reconnect_timeout;

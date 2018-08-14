@@ -275,7 +275,7 @@ static void *ngx_rtmp_live_create_app_conf(ngx_conf_t *cf) {
   lacf->anti_play_attack = NGX_CONF_UNSET;
   lacf->anti_time_use = NGX_CONF_UNSET;
   lacf->anti_time_valid = NGX_CONF_UNSET_MSEC;
-  lacf->jitter= NGX_CONF_UNSET;
+  lacf->jitter = NGX_CONF_UNSET;
 
   return lacf;
 }
