@@ -50,6 +50,7 @@ struct ngx_rtmp_live_stream_s {
   ngx_rtmp_bandwidth_t bw_in_data;
   ngx_rtmp_bandwidth_t bw_out;
   ngx_msec_t epoch;
+  ngx_rtmp_in_videoframe_t videoframe_in;
   unsigned active : 1;
   unsigned publishing : 1;
 };
@@ -79,6 +80,7 @@ typedef struct {
   ngx_flag_t anti_time_use;         // 0
   ngx_msec_t anti_time_valid;       // 600*1000  30m
   ngx_str_t anti_key_whitelist;     // xueersi
+  ngx_flag_t jitter;
 } ngx_rtmp_live_app_conf_t;
 
 extern ngx_module_t ngx_rtmp_live_module;

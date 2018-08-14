@@ -170,6 +170,12 @@ static ngx_command_t ngx_rtmp_live_commands[] = {
      ngx_conf_set_str_slot, NGX_RTMP_APP_CONF_OFFSET,
      offsetof(ngx_rtmp_live_app_conf_t, anti_key_whitelist), NULL},
 
+    {ngx_string("jitter"),
+     NGX_RTMP_MAIN_CONF | NGX_RTMP_SRV_CONF | NGX_RTMP_APP_CONF |
+         NGX_CONF_TAKE1,
+     ngx_conf_set_flag_slot, NGX_RTMP_APP_CONF_OFFSET,
+     offsetof(ngx_rtmp_live_app_conf_t, jitter), NULL},
+
     ngx_null_command};
 
 static ngx_rtmp_module_t ngx_rtmp_live_module_ctx = {
@@ -269,6 +275,7 @@ static void *ngx_rtmp_live_create_app_conf(ngx_conf_t *cf) {
   lacf->anti_play_attack = NGX_CONF_UNSET;
   lacf->anti_time_use = NGX_CONF_UNSET;
   lacf->anti_time_valid = NGX_CONF_UNSET_MSEC;
+  lacf->jitter= NGX_CONF_UNSET;
 
   return lacf;
 }
@@ -301,6 +308,7 @@ static char *ngx_rtmp_live_merge_app_conf(ngx_conf_t *cf, void *parent,
                             600 * 1000);
   ngx_conf_merge_str_value(conf->anti_key_whitelist, prev->anti_key_whitelist,
                            "");
+  ngx_conf_merge_value(conf->jitter, prev->jitter, 0);
 
   conf->pool = ngx_create_pool(4096, &cf->cycle->new_log);
   if (conf->pool == NULL) {
@@ -337,6 +345,7 @@ ngx_rtmp_live_stream_t **ngx_rtmp_live_get_stream(ngx_rtmp_session_t *s,
   ngx_rtmp_live_app_conf_t *lacf;
   ngx_rtmp_live_stream_t **stream;
   size_t len;
+  ngx_array_t *videoFrameArray = NULL;
 
   lacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_live_module);
   if (lacf == NULL) {
@@ -362,12 +371,19 @@ ngx_rtmp_live_stream_t **ngx_rtmp_live_get_stream(ngx_rtmp_session_t *s,
   if (lacf->free_streams) {
     *stream = lacf->free_streams;
     lacf->free_streams = lacf->free_streams->next;
+
+    (*stream)->videoframe_in.elementArray->nelts = 0;
+    videoFrameArray = (*stream)->videoframe_in.elementArray;
   } else {
     *stream = ngx_palloc(lacf->pool, sizeof(ngx_rtmp_live_stream_t));
+    videoFrameArray = ngx_array_create(
+        lacf->pool, 32, sizeof(ngx_rtmp_in_videoframe_element_t));
   }
   ngx_memzero(*stream, sizeof(ngx_rtmp_live_stream_t));
   ngx_memcpy((*stream)->name, name, ngx_min(sizeof((*stream)->name) - 1, len));
+
   (*stream)->epoch = ngx_current_msec;
+  (*stream)->videoframe_in.elementArray = videoFrameArray;
 
   return stream;
 }
@@ -641,6 +657,7 @@ static void ngx_rtmp_live_join(ngx_rtmp_session_t *s, u_char *name,
 
     (*stream)->publishing = 1;
     (*stream)->pub_ctx = ctx;
+    (*stream)->videoframe_in.publish = s;
   }
 
   ctx->stream = *stream;
@@ -1141,6 +1158,11 @@ static ngx_int_t ngx_rtmp_live_av(ngx_rtmp_session_t *s, ngx_rtmp_header_t *h,
                                 ? &ctx->stream->bw_in_audio
                                 : &ctx->stream->bw_in_video,
                             h->mlen);
+
+  if (codec_ctx && h->type == NGX_RTMP_MSG_VIDEO) {
+    ngx_rtmp_update_in_videoframe(&(ctx->stream->videoframe_in),
+                                  codec_ctx->frame_rate, 1);
+  }
 
   return NGX_OK;
 }
