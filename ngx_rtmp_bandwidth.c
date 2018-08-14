@@ -25,12 +25,13 @@ void ngx_rtmp_update_bandwidth(ngx_rtmp_bandwidth_t *bw, uint32_t bytes) {
 void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
                                    ngx_uint_t num) {
   ngx_rtmp_live_app_conf_t *lacf;
+  ngx_rtmp_session_t *s = vf->publish;
+
+  lacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_live_module);
+
+  if (lacf == NULL || lacf->jitter == 0) return;
 
   if (ngx_cached_time->sec >= vf->intl_end) {
-    ngx_rtmp_session_t *s = vf->publish;
-
-    lacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_live_module);
-
     if (vf->intl_videoframenum != 0) {
       if (vf->isSave) {
         ngx_rtmp_in_videoframe_element_t *element;
@@ -52,12 +53,6 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
           vf->no_statis_num++;
           vf->no_data_num++;
           vf->no_data_framenum += vf->intl_videoframenum;
-          ngx_log_error(
-              NGX_LOG_ERR, s->connection->log, 0,
-              "live  jitter "
-              "name=%s,duration=%i,framenum=%ui,pos=%ui,nodataseq=%ui",
-              s->streamname, ngx_cached_time->sec > vf->intl_end, element->num,
-              vf->elementArray->nelts, vf->no_data_num);
         } else {
           element = ngx_array_push(vf->elementArray);
           element->num = vf->intl_videoframenum;
@@ -68,22 +63,6 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
             element->percent = (double)element->num / vf->intl_videoframe_ave;
           else
             element->percent = 1;
-
-          if (fps) {
-            ngx_log_error(
-                NGX_LOG_INFO, s->connection->log, 0,
-                "live "
-                "name=%s,framenum=%ui,percent=%.3f,ave=%ui,fps=%ui,count=%ui",
-                s->streamname, element->num, element->percent,
-                vf->intl_videoframe_ave, fps, vf->elementArray->nelts);
-          } else {
-            ngx_log_error(
-                NGX_LOG_INFO, s->connection->log, 0,
-                "live "
-                "name=%s,framenum=%ui,percent=%.3f,ave=%ui,fps=%ui,count=%ui",
-                s->streamname, element->num, element->percent,
-                vf->intl_videoframe_ave, vf->fps, vf->elementArray->nelts);
-          }
 
           if (vf->elementArray->nelts - vf->no_statis_num >=
               NGX_RTMP_IN_VIDEOFRAME_SCOPE_1) {
@@ -99,11 +78,9 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
                     ++n >= NGX_RTMP_IN_VIDEOFRAME_MATCH_1) {
                   ngx_log_error(
                       NGX_LOG_ERR, s->connection->log, 0,
-                      "drop publish because live jitter name=%s,condition=%.3f",
-                      s->streamname, NGX_RTMP_IN_VIDEOFRAME_LIMIT_1);
-                  if (lacf && lacf->jitter) {
-                    ngx_rtmp_finalize_session(s);
-                  }
+                      "drop publish because live jitter condition=%.3f",
+                      NGX_RTMP_IN_VIDEOFRAME_LIMIT_1);
+                  ngx_rtmp_finalize_session(s);
                   iscloseconnect = 1;
                   break;
                 }
@@ -116,14 +93,11 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
                       firstElement[vf->elementArray->nelts - 2 - i].percent <=
                           NGX_RTMP_IN_VIDEOFRAME_LIMIT_2 &&
                       ++n >= NGX_RTMP_IN_VIDEOFRAME_MATCH_2) {
-                    ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                                  "drop publish because live jitter "
-                                  "name=%s,condition=%.3f",
-                                  s->streamname,
-                                  NGX_RTMP_IN_VIDEOFRAME_LIMIT_2);
-                    if (lacf && lacf->jitter) {
-                      ngx_rtmp_finalize_session(s);
-                    }
+                    ngx_log_error(
+                        NGX_LOG_ERR, s->connection->log, 0,
+                        "drop publish because live jitter condition=%.3f",
+                        NGX_RTMP_IN_VIDEOFRAME_LIMIT_2);
+                    ngx_rtmp_finalize_session(s);
                     iscloseconnect = 1;
                     break;
                   }
@@ -141,21 +115,11 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
                 NGX_RTMP_IN_VIDEOFRAME_SCOPE_1 ||
             element->percent < 0.0001) {
           if (element->percent <= NGX_RTMP_IN_VIDEOFRAME_LIMIT_3) {
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
-                          "live jitter name=%s,duration=%ui,framenum=%ui",
-                          s->streamname,
-                          ngx_cached_time->sec - vf->intl_end +
-                              NGX_RTMP_IN_VIDEOFRAME_INTERVAL,
-                          element->num);
-
             if (vf->net_jitter_time) {
-              ngx_log_error(
-                  NGX_LOG_ERR, s->connection->log, 0,
-                  "drop publish because live jitter name=%s,condition=%.3f",
-                  s->streamname, NGX_RTMP_IN_VIDEOFRAME_LIMIT_3);
-              if (lacf && lacf->jitter) {
-                ngx_rtmp_finalize_session(s);
-              }
+              ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+                            "drop publish because live jitter condition=%.3f",
+                            NGX_RTMP_IN_VIDEOFRAME_LIMIT_3);
+              ngx_rtmp_finalize_session(s);
             }
 
             vf->net_jitter_time = ngx_cached_time->sec;
@@ -164,10 +128,6 @@ void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
           if (vf->net_jitter_time &&
               ngx_cached_time->sec >
                   vf->net_jitter_time + NGX_RTMP_IN_JITTER_INTERVAL) {
-            ngx_log_error(
-                NGX_LOG_ERR, s->connection->log, 0,
-                "live jitter name=%s havn't happened exceed %ui seconds ",
-                s->streamname, ngx_cached_time->sec - vf->net_jitter_time);
             vf->net_jitter_time = 0;
           }
         }

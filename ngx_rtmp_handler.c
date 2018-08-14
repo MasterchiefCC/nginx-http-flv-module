@@ -10,6 +10,7 @@
 #include "ngx_rtmp.h"
 #include "ngx_rtmp_amf.h"
 #include "ngx_rtmp_cmd_module.h"
+#include "ngx_rtmp_bandwidth.h"
 
 
 static void ngx_rtmp_recv(ngx_event_t *rev);

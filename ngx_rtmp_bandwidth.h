@@ -8,12 +8,26 @@
 
 #include <ngx_config.h>
 #include <ngx_core.h>
-#include "ngx_rtmp.h"
 
 /* Bandwidth update interval in seconds */
-/*in videoframe update interval in seconds */
 #define NGX_RTMP_BANDWIDTH_INTERVAL 10
 
+typedef struct {
+  uint64_t bytes;
+  uint64_t bandwidth; /* bytes/sec */
+
+  time_t intl_end;
+  uint64_t intl_bytes;
+} ngx_rtmp_bandwidth_t;
+
+extern ngx_rtmp_bandwidth_t ngx_rtmp_bw_out;
+extern ngx_rtmp_bandwidth_t ngx_rtmp_bw_in;
+
+#include "ngx_rtmp.h"
+
+void ngx_rtmp_update_bandwidth(ngx_rtmp_bandwidth_t *bw, uint32_t bytes);
+
+/*in videoframe update interval in seconds */
 #define NGX_RTMP_IN_VIDEOFRAME_INTERVAL 5
 
 #define NGX_RTMP_IN_VIDEOFRAME_SCOPE_1 24
@@ -27,14 +41,6 @@
 #define NGX_RTMP_IN_VIDEOFRAME_LIMIT_3 0.333
 #define NGX_RTMP_IN_VIDEOFRAME_MATCH_3 2
 #define NGX_RTMP_IN_JITTER_INTERVAL 10 * 60
-
-typedef struct {
-  uint64_t bytes;
-  uint64_t bandwidth; /* bytes/sec */
-
-  time_t intl_end;
-  uint64_t intl_bytes;
-} ngx_rtmp_bandwidth_t;
 
 typedef struct {
   ngx_uint_t num;
@@ -58,7 +64,6 @@ typedef struct {
   ngx_msec_t videoend;
 } ngx_rtmp_in_videoframe_t;
 
-void ngx_rtmp_update_bandwidth(ngx_rtmp_bandwidth_t *bw, uint32_t bytes);
 void ngx_rtmp_update_in_videoframe(ngx_rtmp_in_videoframe_t *vf, ngx_uint_t fps,
                                    ngx_uint_t num);
 

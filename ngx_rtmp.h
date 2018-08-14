@@ -1,9 +1,3 @@
-
-/*
- * Copyright (C) Roman Arutyunyan
- * Copyright (C) Winshining
- */
-
 #ifndef _NGX_RTMP_H_INCLUDED_
 #define _NGX_RTMP_H_INCLUDED_
 
@@ -14,7 +8,6 @@
 #include <ngx_event_connect.h>
 
 #include "ngx_rtmp_amf.h"
-#include "ngx_rtmp_bandwidth.h"
 
 typedef struct ngx_rtmp_core_srv_conf_s ngx_rtmp_core_srv_conf_t;
 typedef struct ngx_rtmp_session_s ngx_rtmp_session_t;
@@ -731,8 +724,6 @@ static ngx_inline ngx_int_t ngx_rtmp_is_codec_header(ngx_chain_t *in) {
   return in->buf->pos + 1 < in->buf->last && in->buf->pos[1] == 0;
 }
 
-extern ngx_rtmp_bandwidth_t ngx_rtmp_bw_out;
-extern ngx_rtmp_bandwidth_t ngx_rtmp_bw_in;
 
 extern ngx_uint_t ngx_rtmp_naccepted;
 #if (nginx_version >= 1007011)
